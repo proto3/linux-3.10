@@ -32,9 +32,9 @@
 #include <linux/delay.h>
 #include <linux/videodev2.h>
 #include <linux/workqueue.h>
-#include <linux/v4l2-dv-timings.h>
+//#include <linux/v4l2-dv-timings.h>
 #include <linux/hdmi.h>
-#include <media/v4l2-dv-timings.h>
+//#include <media/v4l2-dv-timings.h>
 #include <media/v4l2-device.h>
 #include <media/v4l2-ctrls.h>
 #include <media/tc358743.h>
@@ -54,18 +54,18 @@ MODULE_LICENSE("GPL");
 #define EDID_NUM_BLOCKS_MAX 8
 #define EDID_BLOCK_SIZE 128
 
-static const struct v4l2_dv_timings_cap tc358743_timings_cap = {
-	.type = V4L2_DV_BT_656_1120,
-	/* keep this initialization for compatibility with GCC < 4.4.6 */
-	.reserved = { 0 },
-	/* Pixel clock from REF_01 p. 20. Min/max height/width are unknown */
-	V4L2_INIT_BT_TIMINGS(1, 10000, 1, 10000, 0, 165000000,
-			V4L2_DV_BT_STD_CEA861 | V4L2_DV_BT_STD_DMT |
-			V4L2_DV_BT_STD_GTF | V4L2_DV_BT_STD_CVT,
-			V4L2_DV_BT_CAP_PROGRESSIVE |
-			V4L2_DV_BT_CAP_REDUCED_BLANKING |
-			V4L2_DV_BT_CAP_CUSTOM)
-};
+// static const struct v4l2_dv_timings_cap tc358743_timings_cap = {
+// 	.type = V4L2_DV_BT_656_1120,
+// 	/* keep this initialization for compatibility with GCC < 4.4.6 */
+// 	.reserved = { 0 },
+// 	/* Pixel clock from REF_01 p. 20. Min/max height/width are unknown */
+// 	V4L2_INIT_BT_TIMINGS(1, 10000, 1, 10000, 0, 165000000,
+// 			V4L2_DV_BT_STD_CEA861 | V4L2_DV_BT_STD_DMT |
+// 			V4L2_DV_BT_STD_GTF | V4L2_DV_BT_STD_CVT,
+// 			V4L2_DV_BT_CAP_PROGRESSIVE |
+// 			V4L2_DV_BT_CAP_REDUCED_BLANKING |
+// 			V4L2_DV_BT_CAP_CUSTOM)
+// };
 
 struct tc358743_state {
 	struct tc358743_platform_data pdata;
@@ -88,7 +88,7 @@ struct tc358743_state {
 	/* edid  */
 	u8 edid_blocks_written;
 
-	struct v4l2_dv_timings timings;
+	//struct v4l2_dv_timings timings;
 	u32 mbus_fmt_code;
 };
 
@@ -280,64 +280,64 @@ static unsigned tc358743_num_csi_lanes_in_use(struct v4l2_subdev *sd)
 
 /* --------------- TIMINGS --------------- */
 
-static inline unsigned fps(const struct v4l2_bt_timings *t)
-{
-	if (!V4L2_DV_BT_FRAME_HEIGHT(t) || !V4L2_DV_BT_FRAME_WIDTH(t))
-		return 0;
-
-	return DIV_ROUND_CLOSEST((unsigned)t->pixelclock,
-			V4L2_DV_BT_FRAME_HEIGHT(t) * V4L2_DV_BT_FRAME_WIDTH(t));
-}
-
-static int tc358743_get_detected_timings(struct v4l2_subdev *sd,
-				     struct v4l2_dv_timings *timings)
-{
-	struct v4l2_bt_timings *bt = &timings->bt;
-	unsigned width, height, frame_width, frame_height, frame_interval, fps;
-
-	memset(timings, 0, sizeof(struct v4l2_dv_timings));
-
-	if (no_signal(sd)) {
-		v4l2_dbg(1, debug, sd, "%s: no valid signal\n", __func__);
-		return -ENOLINK;
-	}
-	if (no_sync(sd)) {
-		v4l2_dbg(1, debug, sd, "%s: no sync on signal\n", __func__);
-		return -ENOLCK;
-	}
-
-	timings->type = V4L2_DV_BT_656_1120;
-	bt->interlaced = i2c_rd8(sd, VI_STATUS1) & MASK_S_V_INTERLACE ?
-		V4L2_DV_INTERLACED : V4L2_DV_PROGRESSIVE;
-
-	width = ((i2c_rd8(sd, DE_WIDTH_H_HI) & 0x1f) << 8) +
-		i2c_rd8(sd, DE_WIDTH_H_LO);
-	height = ((i2c_rd8(sd, DE_WIDTH_V_HI) & 0x1f) << 8) +
-		i2c_rd8(sd, DE_WIDTH_V_LO);
-	frame_width = ((i2c_rd8(sd, H_SIZE_HI) & 0x1f) << 8) +
-		i2c_rd8(sd, H_SIZE_LO);
-	frame_height = (((i2c_rd8(sd, V_SIZE_HI) & 0x3f) << 8) +
-		i2c_rd8(sd, V_SIZE_LO)) / 2;
-	/* frame interval in milliseconds * 10
-	 * Require SYS_FREQ0 and SYS_FREQ1 are precisely set */
-	frame_interval = ((i2c_rd8(sd, FV_CNT_HI) & 0x3) << 8) +
-		i2c_rd8(sd, FV_CNT_LO);
-	fps = (frame_interval > 0) ?
-		DIV_ROUND_CLOSEST(10000, frame_interval) : 0;
-
-	bt->width = width;
-	bt->height = height;
-	bt->vsync = frame_height - height;
-	bt->hsync = frame_width - width;
-	bt->pixelclock = frame_width * frame_height * fps;
-	if (bt->interlaced == V4L2_DV_INTERLACED) {
-		bt->height *= 2;
-		bt->il_vsync = bt->vsync + 1;
-		bt->pixelclock /= 2;
-	}
-
-	return 0;
-}
+// static inline unsigned fps(const struct v4l2_bt_timings *t)
+// {
+// 	if (!V4L2_DV_BT_FRAME_HEIGHT(t) || !V4L2_DV_BT_FRAME_WIDTH(t))
+// 		return 0;
+//
+// 	return DIV_ROUND_CLOSEST((unsigned)t->pixelclock,
+// 			V4L2_DV_BT_FRAME_HEIGHT(t) * V4L2_DV_BT_FRAME_WIDTH(t));
+// }
+//
+// static int tc358743_get_detected_timings(struct v4l2_subdev *sd,
+// 				     struct v4l2_dv_timings *timings)
+// {
+// 	struct v4l2_bt_timings *bt = &timings->bt;
+// 	unsigned width, height, frame_width, frame_height, frame_interval, fps;
+//
+// 	memset(timings, 0, sizeof(struct v4l2_dv_timings));
+//
+// 	if (no_signal(sd)) {
+// 		v4l2_dbg(1, debug, sd, "%s: no valid signal\n", __func__);
+// 		return -ENOLINK;
+// 	}
+// 	if (no_sync(sd)) {
+// 		v4l2_dbg(1, debug, sd, "%s: no sync on signal\n", __func__);
+// 		return -ENOLCK;
+// 	}
+//
+// 	timings->type = V4L2_DV_BT_656_1120;
+// 	bt->interlaced = i2c_rd8(sd, VI_STATUS1) & MASK_S_V_INTERLACE ?
+// 		V4L2_DV_INTERLACED : V4L2_DV_PROGRESSIVE;
+//
+// 	width = ((i2c_rd8(sd, DE_WIDTH_H_HI) & 0x1f) << 8) +
+// 		i2c_rd8(sd, DE_WIDTH_H_LO);
+// 	height = ((i2c_rd8(sd, DE_WIDTH_V_HI) & 0x1f) << 8) +
+// 		i2c_rd8(sd, DE_WIDTH_V_LO);
+// 	frame_width = ((i2c_rd8(sd, H_SIZE_HI) & 0x1f) << 8) +
+// 		i2c_rd8(sd, H_SIZE_LO);
+// 	frame_height = (((i2c_rd8(sd, V_SIZE_HI) & 0x3f) << 8) +
+// 		i2c_rd8(sd, V_SIZE_LO)) / 2;
+// 	/* frame interval in milliseconds * 10
+// 	 * Require SYS_FREQ0 and SYS_FREQ1 are precisely set */
+// 	frame_interval = ((i2c_rd8(sd, FV_CNT_HI) & 0x3) << 8) +
+// 		i2c_rd8(sd, FV_CNT_LO);
+// 	fps = (frame_interval > 0) ?
+// 		DIV_ROUND_CLOSEST(10000, frame_interval) : 0;
+//
+// 	bt->width = width;
+// 	bt->height = height;
+// 	bt->vsync = frame_height - height;
+// 	bt->hsync = frame_width - width;
+// 	bt->pixelclock = frame_width * frame_height * fps;
+// 	if (bt->interlaced == V4L2_DV_INTERLACED) {
+// 		bt->height *= 2;
+// 		bt->il_vsync = bt->vsync + 1;
+// 		bt->pixelclock /= 2;
+// 	}
+//
+// 	return 0;
+// }
 
 /* --------------- HOTPLUG / HDCP / EDID --------------- */
 
@@ -426,27 +426,27 @@ static void tc358743_erase_bksv(struct v4l2_subdev *sd)
 
 /* --------------- AVI infoframe --------------- */
 
-static void print_avi_infoframe(struct v4l2_subdev *sd)
-{
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
-	struct device *dev = &client->dev;
-	union hdmi_infoframe frame;
-	u8 buffer[HDMI_INFOFRAME_SIZE(AVI)];
-
-	if (!is_hdmi(sd)) {
-		v4l2_info(sd, "DVI-D signal - AVI infoframe not supported\n");
-		return;
-	}
-
-	i2c_rd(sd, PK_AVI_0HEAD, buffer, HDMI_INFOFRAME_SIZE(AVI));
-
-	if (hdmi_infoframe_unpack(&frame, buffer) < 0) {
-		v4l2_err(sd, "%s: unpack of AVI infoframe failed\n", __func__);
-		return;
-	}
-
-	hdmi_infoframe_log(KERN_INFO, dev, &frame);
-}
+// static void print_avi_infoframe(struct v4l2_subdev *sd)
+// {
+// 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+// 	struct device *dev = &client->dev;
+// 	union hdmi_infoframe frame;
+// 	u8 buffer[HDMI_INFOFRAME_SIZE(AVI)];
+//
+// 	if (!is_hdmi(sd)) {
+// 		v4l2_info(sd, "DVI-D signal - AVI infoframe not supported\n");
+// 		return;
+// 	}
+//
+// 	i2c_rd(sd, PK_AVI_0HEAD, buffer, HDMI_INFOFRAME_SIZE(AVI));
+//
+// 	if (hdmi_infoframe_unpack(&frame, buffer) < 0) {
+// 		v4l2_err(sd, "%s: unpack of AVI infoframe failed\n", __func__);
+// 		return;
+// 	}
+//
+// 	hdmi_infoframe_log(KERN_INFO, dev, &frame);
+// }
 
 /* --------------- CTRLS --------------- */
 
@@ -615,51 +615,54 @@ static void tc358743_set_ref_clk(struct v4l2_subdev *sd)
 			MASK_NCO_F0_MOD_27MHZ : 0x0);
 }
 
-static void tc358743_set_csi_color_space(struct v4l2_subdev *sd)
-{
-	struct tc358743_state *state = to_state(sd);
-
-	switch (state->mbus_fmt_code) {
-	case MEDIA_BUS_FMT_UYVY8_1X16:
-		v4l2_dbg(2, debug, sd, "%s: YCbCr 422 16-bit\n", __func__);
-		i2c_wr8_and_or(sd, VOUT_SET2,
-				~(MASK_SEL422 | MASK_VOUT_422FIL_100) & 0xff,
-				MASK_SEL422 | MASK_VOUT_422FIL_100);
-		i2c_wr8_and_or(sd, VI_REP, ~MASK_VOUT_COLOR_SEL & 0xff,
-				MASK_VOUT_COLOR_601_YCBCR_LIMITED);
-		mutex_lock(&state->confctl_mutex);
-		i2c_wr16_and_or(sd, CONFCTL, ~MASK_YCBCRFMT,
-				MASK_YCBCRFMT_422_8_BIT);
-		mutex_unlock(&state->confctl_mutex);
-		break;
-	case MEDIA_BUS_FMT_RGB888_1X24:
-		v4l2_dbg(2, debug, sd, "%s: RGB 888 24-bit\n", __func__);
-		i2c_wr8_and_or(sd, VOUT_SET2,
-				~(MASK_SEL422 | MASK_VOUT_422FIL_100) & 0xff,
-				0x00);
-		i2c_wr8_and_or(sd, VI_REP, ~MASK_VOUT_COLOR_SEL & 0xff,
-				MASK_VOUT_COLOR_RGB_FULL);
-		mutex_lock(&state->confctl_mutex);
-		i2c_wr16_and_or(sd, CONFCTL, ~MASK_YCBCRFMT, 0);
-		mutex_unlock(&state->confctl_mutex);
-		break;
-	default:
-		v4l2_dbg(2, debug, sd, "%s: Unsupported format code 0x%x\n",
-				__func__, state->mbus_fmt_code);
-	}
-}
+// static void tc358743_set_csi_color_space(struct v4l2_subdev *sd)
+// {
+// 	struct tc358743_state *state = to_state(sd);
+//
+// 	switch (state->mbus_fmt_code) {
+// 	case MEDIA_BUS_FMT_UYVY8_1X16:
+// 		v4l2_dbg(2, debug, sd, "%s: YCbCr 422 16-bit\n", __func__);
+// 		i2c_wr8_and_or(sd, VOUT_SET2,
+// 				~(MASK_SEL422 | MASK_VOUT_422FIL_100) & 0xff,
+// 				MASK_SEL422 | MASK_VOUT_422FIL_100);
+// 		i2c_wr8_and_or(sd, VI_REP, ~MASK_VOUT_COLOR_SEL & 0xff,
+// 				MASK_VOUT_COLOR_601_YCBCR_LIMITED);
+// 		mutex_lock(&state->confctl_mutex);
+// 		i2c_wr16_and_or(sd, CONFCTL, ~MASK_YCBCRFMT,
+// 				MASK_YCBCRFMT_422_8_BIT);
+// 		mutex_unlock(&state->confctl_mutex);
+// 		break;
+// 	case MEDIA_BUS_FMT_RGB888_1X24:
+// 		v4l2_dbg(2, debug, sd, "%s: RGB 888 24-bit\n", __func__);
+// 		i2c_wr8_and_or(sd, VOUT_SET2,
+// 				~(MASK_SEL422 | MASK_VOUT_422FIL_100) & 0xff,
+// 				0x00);
+// 		i2c_wr8_and_or(sd, VI_REP, ~MASK_VOUT_COLOR_SEL & 0xff,
+// 				MASK_VOUT_COLOR_RGB_FULL);
+// 		mutex_lock(&state->confctl_mutex);
+// 		i2c_wr16_and_or(sd, CONFCTL, ~MASK_YCBCRFMT, 0);
+// 		mutex_unlock(&state->confctl_mutex);
+// 		break;
+// 	default:
+// 		v4l2_dbg(2, debug, sd, "%s: Unsupported format code 0x%x\n",
+// 				__func__, state->mbus_fmt_code);
+// 	}
+// }
 
 static unsigned tc358743_num_csi_lanes_needed(struct v4l2_subdev *sd)
 {
-	struct tc358743_state *state = to_state(sd);
-	struct v4l2_bt_timings *bt = &state->timings.bt;
-	struct tc358743_platform_data *pdata = &state->pdata;
-	u32 bits_pr_pixel =
-		(state->mbus_fmt_code == MEDIA_BUS_FMT_UYVY8_1X16) ?  16 : 24;
-	u32 bps = bt->width * bt->height * fps(bt) * bits_pr_pixel;
-	u32 bps_pr_lane = (pdata->refclk_hz / pdata->pll_prd) * pdata->pll_fbd;
+	//XXX
+	return 4;
 
-	return DIV_ROUND_UP(bps, bps_pr_lane);
+	// struct tc358743_state *state = to_state(sd);
+	// struct v4l2_bt_timings *bt = &state->timings.bt;
+	// struct tc358743_platform_data *pdata = &state->pdata;
+	// u32 bits_pr_pixel =
+	// 	(state->mbus_fmt_code == MEDIA_BUS_FMT_UYVY8_1X16) ?  16 : 24;
+	// u32 bps = bt->width * bt->height * fps(bt) * bits_pr_pixel;
+	// u32 bps_pr_lane = (pdata->refclk_hz / pdata->pll_prd) * pdata->pll_fbd;
+	//
+	// return DIV_ROUND_UP(bps, bps_pr_lane);
 }
 
 static void tc358743_set_csi(struct v4l2_subdev *sd)
@@ -830,29 +833,30 @@ static void tc358743_initial_setup(struct v4l2_subdev *sd)
 
 static void tc358743_format_change(struct v4l2_subdev *sd)
 {
-	struct tc358743_state *state = to_state(sd);
-	struct v4l2_dv_timings timings;
-	const struct v4l2_event tc358743_ev_fmt = {
-		.type = V4L2_EVENT_SOURCE_CHANGE,
-		.u.src_change.changes = V4L2_EVENT_SRC_CH_RESOLUTION,
-	};
-
-	if (tc358743_get_detected_timings(sd, &timings)) {
+	//XXX
+	// struct tc358743_state *state = to_state(sd);
+	// struct v4l2_dv_timings timings;
+	// const struct v4l2_event tc358743_ev_fmt = {
+	// 	.type = V4L2_EVENT_SOURCE_CHANGE,
+	// 	.u.src_change.changes = V4L2_EVENT_SRC_CH_RESOLUTION,
+	// };
+	//
+	// if (tc358743_get_detected_timings(sd, &timings)) {
 		enable_stream(sd, false);
-
-		v4l2_dbg(1, debug, sd, "%s: Format changed. No signal\n",
-				__func__);
-	} else {
-		if (!v4l2_match_dv_timings(&state->timings, &timings, 0))
-			enable_stream(sd, false);
-
-		v4l2_print_dv_timings(sd->name,
-				"tc358743_format_change: Format changed. New format: ",
-				&timings, false);
-	}
-
-	v4l2_subdev_notify(sd, V4L2_DEVICE_NOTIFY_EVENT,
-			(void *)&tc358743_ev_fmt);
+	//
+	// 	v4l2_dbg(1, debug, sd, "%s: Format changed. No signal\n",
+	// 			__func__);
+	// } else {
+	// 	if (!v4l2_match_dv_timings(&state->timings, &timings, 0))
+	// 		enable_stream(sd, false);
+	//
+	// 	v4l2_print_dv_timings(sd->name,
+	// 			"tc358743_format_change: Format changed. New format: ",
+	// 			&timings, false);
+	// }
+	//
+	// v4l2_subdev_notify(sd, V4L2_DEVICE_NOTIFY_EVENT,
+	// 		(void *)&tc358743_ev_fmt);
 }
 
 static void tc358743_init_interrupts(struct v4l2_subdev *sd)
@@ -1017,7 +1021,7 @@ static void tc358743_hdmi_clk_int_handler(struct v4l2_subdev *sd, bool *handled)
 
 static void tc358743_hdmi_sys_int_handler(struct v4l2_subdev *sd, bool *handled)
 {
-	struct tc358743_state *state = to_state(sd);
+	//struct tc358743_state *state = to_state(sd);
 	u8 sys_int_mask = i2c_rd8(sd, SYS_INTM);
 	u8 sys_int = i2c_rd8(sd, SYS_INT) & ~sys_int_mask;
 
@@ -1036,7 +1040,7 @@ static void tc358743_hdmi_sys_int_handler(struct v4l2_subdev *sd, bool *handled)
 		} else {
 			tc358743_enable_interrupts(sd, false);
 			tc358743_disable_edid(sd);
-			memset(&state->timings, 0, sizeof(state->timings));
+			//memset(&state->timings, 0, sizeof(state->timings));
 			tc358743_erase_bksv(sd);
 			tc358743_update_controls(sd);
 		}
@@ -1085,8 +1089,8 @@ static void tc358743_hdmi_sys_int_handler(struct v4l2_subdev *sd, bool *handled)
 
 static int tc358743_log_status(struct v4l2_subdev *sd)
 {
-	struct tc358743_state *state = to_state(sd);
-	struct v4l2_dv_timings timings;
+	// struct tc358743_state *state = to_state(sd);
+	// struct v4l2_dv_timings timings;
 	uint8_t hdmi_sys_status =  i2c_rd8(sd, SYS_STATUS);
 	uint16_t sysctl = i2c_rd16(sd, SYSCTL);
 	u8 vi_status3 =  i2c_rd8(sd, VI_STATUS3);
@@ -1127,14 +1131,14 @@ static int tc358743_log_status(struct v4l2_subdev *sd)
 	v4l2_info(sd, "PHY DE detected: %s\n",
 			hdmi_sys_status & MASK_S_PHY_SCDT ? "yes" : "no");
 
-	if (tc358743_get_detected_timings(sd, &timings)) {
-		v4l2_info(sd, "No video detected\n");
-	} else {
-		v4l2_print_dv_timings(sd->name, "Detected format: ", &timings,
-				true);
-	}
-	v4l2_print_dv_timings(sd->name, "Configured format: ", &state->timings,
-			true);
+	// if (tc358743_get_detected_timings(sd, &timings)) {
+	// 	v4l2_info(sd, "No video detected\n");
+	// } else {
+	// 	v4l2_print_dv_timings(sd->name, "Detected format: ", &timings,
+	// 			true);
+	// }
+	// v4l2_print_dv_timings(sd->name, "Configured format: ", &state->timings,
+	// 		true);
 
 	v4l2_info(sd, "-----CSI-TX status-----\n");
 	v4l2_info(sd, "Lanes needed: %d\n",
@@ -1153,11 +1157,11 @@ static int tc358743_log_status(struct v4l2_subdev *sd)
 	v4l2_info(sd, "Stopped: %s\n",
 			(i2c_rd16(sd, CSI_STATUS) & MASK_S_HLT) ?
 			"yes" : "no");
-	v4l2_info(sd, "Color space: %s\n",
-			state->mbus_fmt_code == MEDIA_BUS_FMT_UYVY8_1X16 ?
-			"YCbCr 422 16-bit" :
-			state->mbus_fmt_code == MEDIA_BUS_FMT_RGB888_1X24 ?
-			"RGB 888 24-bit" : "Unsupported");
+	// v4l2_info(sd, "Color space: %s\n",
+	// 		state->mbus_fmt_code == MEDIA_BUS_FMT_UYVY8_1X16 ?
+	// 		"YCbCr 422 16-bit" :
+	// 		state->mbus_fmt_code == MEDIA_BUS_FMT_RGB888_1X24 ?
+	// 		"RGB 888 24-bit" : "Unsupported");
 
 	v4l2_info(sd, "-----%s status-----\n", is_hdmi(sd) ? "HDMI" : "DVI-D");
 	v4l2_info(sd, "HDCP encrypted content: %s\n",
@@ -1172,7 +1176,7 @@ static int tc358743_log_status(struct v4l2_subdev *sd)
 	v4l2_info(sd, "Deep color mode: %d-bits per channel\n",
 			deep_color_mode[(i2c_rd8(sd, VI_STATUS1) &
 				MASK_S_DEEPCOLOR) >> 2]);
-	print_avi_infoframe(sd);
+	//print_avi_infoframe(sd);
 
 	return 0;
 }
@@ -1312,93 +1316,93 @@ static int tc358743_g_input_status(struct v4l2_subdev *sd, u32 *status)
 	return 0;
 }
 
-static int tc358743_s_dv_timings(struct v4l2_subdev *sd,
-				 struct v4l2_dv_timings *timings)
-{
-	struct tc358743_state *state = to_state(sd);
-	struct v4l2_bt_timings *bt;
-
-	if (!timings)
-		return -EINVAL;
-
-	if (debug)
-		v4l2_print_dv_timings(sd->name, "tc358743_s_dv_timings: ",
-				timings, false);
-
-	if (v4l2_match_dv_timings(&state->timings, timings, 0)) {
-		v4l2_dbg(1, debug, sd, "%s: no change\n", __func__);
-		return 0;
-	}
-
-	bt = &timings->bt;
-
-	if (!v4l2_valid_dv_timings(timings,
-				&tc358743_timings_cap, NULL, NULL)) {
-		v4l2_dbg(1, debug, sd, "%s: timings out of range\n", __func__);
-		return -ERANGE;
-	}
-
-	state->timings = *timings;
-
-	enable_stream(sd, false);
-	tc358743_set_pll(sd);
-	tc358743_set_csi(sd);
-
-	return 0;
-}
-
-static int tc358743_g_dv_timings(struct v4l2_subdev *sd,
-				 struct v4l2_dv_timings *timings)
-{
-	struct tc358743_state *state = to_state(sd);
-
-	*timings = state->timings;
-
-	return 0;
-}
-
-static int tc358743_enum_dv_timings(struct v4l2_subdev *sd,
-				    struct v4l2_enum_dv_timings *timings)
-{
-	if (timings->pad != 0)
-		return -EINVAL;
-
-	return v4l2_enum_dv_timings_cap(timings,
-			&tc358743_timings_cap, NULL, NULL);
-}
-
-static int tc358743_query_dv_timings(struct v4l2_subdev *sd,
-		struct v4l2_dv_timings *timings)
-{
-	int ret;
-
-	ret = tc358743_get_detected_timings(sd, timings);
-	if (ret)
-		return ret;
-
-	if (debug)
-		v4l2_print_dv_timings(sd->name, "tc358743_query_dv_timings: ",
-				timings, false);
-
-	if (!v4l2_valid_dv_timings(timings,
-				&tc358743_timings_cap, NULL, NULL)) {
-		v4l2_dbg(1, debug, sd, "%s: timings out of range\n", __func__);
-		return -ERANGE;
-	}
-
-	return 0;
-}
-
-static int tc358743_dv_timings_cap(struct v4l2_subdev *sd,
-		struct v4l2_dv_timings_cap *cap)
-{
-	if (cap->pad != 0)
-		return -EINVAL;
-
-	*cap = tc358743_timings_cap;
-
-	return 0;
-}
+// static int tc358743_s_dv_timings(struct v4l2_subdev *sd,
+// 				 struct v4l2_dv_timings *timings)
+// {
+// 	struct tc358743_state *state = to_state(sd);
+// 	struct v4l2_bt_timings *bt;
+//
+// 	if (!timings)
+// 		return -EINVAL;
+//
+// 	if (debug)
+// 		v4l2_print_dv_timings(sd->name, "tc358743_s_dv_timings: ",
+// 				timings, false);
+//
+// 	if (v4l2_match_dv_timings(&state->timings, timings, 0)) {
+// 		v4l2_dbg(1, debug, sd, "%s: no change\n", __func__);
+// 		return 0;
+// 	}
+//
+// 	bt = &timings->bt;
+//
+// 	if (!v4l2_valid_dv_timings(timings,
+// 				&tc358743_timings_cap, NULL, NULL)) {
+// 		v4l2_dbg(1, debug, sd, "%s: timings out of range\n", __func__);
+// 		return -ERANGE;
+// 	}
+//
+// 	state->timings = *timings;
+//
+// 	enable_stream(sd, false);
+// 	tc358743_set_pll(sd);
+// 	tc358743_set_csi(sd);
+//
+// 	return 0;
+// }
+//
+// static int tc358743_g_dv_timings(struct v4l2_subdev *sd,
+// 				 struct v4l2_dv_timings *timings)
+// {
+// 	struct tc358743_state *state = to_state(sd);
+//
+// 	*timings = state->timings;
+//
+// 	return 0;
+// }
+//
+// static int tc358743_enum_dv_timings(struct v4l2_subdev *sd,
+// 				    struct v4l2_enum_dv_timings *timings)
+// {
+// 	if (timings->pad != 0)
+// 		return -EINVAL;
+//
+// 	return v4l2_enum_dv_timings_cap(timings,
+// 			&tc358743_timings_cap, NULL, NULL);
+// }
+//
+// static int tc358743_query_dv_timings(struct v4l2_subdev *sd,
+// 		struct v4l2_dv_timings *timings)
+// {
+// 	int ret;
+//
+// 	ret = tc358743_get_detected_timings(sd, timings);
+// 	if (ret)
+// 		return ret;
+//
+// 	if (debug)
+// 		v4l2_print_dv_timings(sd->name, "tc358743_query_dv_timings: ",
+// 				timings, false);
+//
+// 	if (!v4l2_valid_dv_timings(timings,
+// 				&tc358743_timings_cap, NULL, NULL)) {
+// 		v4l2_dbg(1, debug, sd, "%s: timings out of range\n", __func__);
+// 		return -ERANGE;
+// 	}
+//
+// 	return 0;
+// }
+//
+// static int tc358743_dv_timings_cap(struct v4l2_subdev *sd,
+// 		struct v4l2_dv_timings_cap *cap)
+// {
+// 	if (cap->pad != 0)
+// 		return -EINVAL;
+//
+// 	*cap = tc358743_timings_cap;
+//
+// 	return 0;
+// }
 
 static int tc358743_g_mbus_config(struct v4l2_subdev *sd,
 			     struct v4l2_mbus_config *cfg)
@@ -1438,7 +1442,7 @@ static int tc358743_s_stream(struct v4l2_subdev *sd, int enable)
 /* --------------- PAD OPS --------------- */
 
 static int tc358743_get_fmt(struct v4l2_subdev *sd,
-		struct v4l2_subdev_pad_config *cfg,
+		struct v4l2_subdev_fh *fh,
 		struct v4l2_subdev_format *format)
 {
 	struct tc358743_state *state = to_state(sd);
@@ -1448,8 +1452,11 @@ static int tc358743_get_fmt(struct v4l2_subdev *sd,
 		return -EINVAL;
 
 	format->format.code = state->mbus_fmt_code;
-	format->format.width = state->timings.bt.width;
-	format->format.height = state->timings.bt.height;
+	// format->format.width = state->timings.bt.width;
+	// format->format.height = state->timings.bt.height;
+	//XXX
+	format->format.width = 1920;
+	format->format.height = 1080;
 	format->format.field = V4L2_FIELD_NONE;
 
 	switch (vi_rep & MASK_VOUT_COLOR_SEL) {
@@ -1474,13 +1481,13 @@ static int tc358743_get_fmt(struct v4l2_subdev *sd,
 }
 
 static int tc358743_set_fmt(struct v4l2_subdev *sd,
-		struct v4l2_subdev_pad_config *cfg,
+		struct v4l2_subdev_fh *fh,
 		struct v4l2_subdev_format *format)
 {
 	struct tc358743_state *state = to_state(sd);
 
 	u32 code = format->format.code; /* is overwritten by get_fmt */
-	int ret = tc358743_get_fmt(sd, cfg, format);
+	int ret = tc358743_get_fmt(sd, fh, format);
 
 	format->format.code = code;
 
@@ -1488,8 +1495,8 @@ static int tc358743_set_fmt(struct v4l2_subdev *sd,
 		return ret;
 
 	switch (code) {
-	case MEDIA_BUS_FMT_RGB888_1X24:
-	case MEDIA_BUS_FMT_UYVY8_1X16:
+	case V4L2_MBUS_FMT_RGB888_1X24:
+	case V4L2_MBUS_FMT_UYVY8_1X16:
 		break;
 	default:
 		return -EINVAL;
@@ -1503,7 +1510,7 @@ static int tc358743_set_fmt(struct v4l2_subdev *sd,
 	enable_stream(sd, false);
 	tc358743_set_pll(sd);
 	tc358743_set_csi(sd);
-	tc358743_set_csi_color_space(sd);
+	//tc358743_set_csi_color_space(sd);
 
 	return 0;
 }
@@ -1590,9 +1597,9 @@ static const struct v4l2_subdev_core_ops tc358743_core_ops = {
 
 static const struct v4l2_subdev_video_ops tc358743_video_ops = {
 	.g_input_status = tc358743_g_input_status,
-	.s_dv_timings = tc358743_s_dv_timings,
-	.g_dv_timings = tc358743_g_dv_timings,
-	.query_dv_timings = tc358743_query_dv_timings,
+	// .s_dv_timings = tc358743_s_dv_timings,
+	// .g_dv_timings = tc358743_g_dv_timings,
+	// .query_dv_timings = tc358743_query_dv_timings,
 	.g_mbus_config = tc358743_g_mbus_config,
 	.s_stream = tc358743_s_stream,
 };
@@ -1602,8 +1609,8 @@ static const struct v4l2_subdev_pad_ops tc358743_pad_ops = {
 	.get_fmt = tc358743_get_fmt,
 	.get_edid = tc358743_g_edid,
 	.set_edid = tc358743_s_edid,
-	.enum_dv_timings = tc358743_enum_dv_timings,
-	.dv_timings_cap = tc358743_dv_timings_cap,
+	// .enum_dv_timings = tc358743_enum_dv_timings,
+	// .dv_timings_cap = tc358743_dv_timings_cap,
 };
 
 static const struct v4l2_subdev_ops tc358743_ops = {
@@ -1641,8 +1648,8 @@ static const struct v4l2_ctrl_config tc358743_ctrl_audio_present = {
 static int tc358743_probe(struct i2c_client *client,
 			  const struct i2c_device_id *id)
 {
-	static struct v4l2_dv_timings default_timing =
-		V4L2_DV_BT_CEA_640X480P59_94;
+	// static struct v4l2_dv_timings default_timing =
+	// 	V4L2_DV_BT_CEA_640X480P59_94;
 	struct tc358743_state *state;
 	struct tc358743_platform_data *pdata = client->dev.platform_data;
 	struct v4l2_subdev *sd;
@@ -1717,10 +1724,10 @@ static int tc358743_probe(struct i2c_client *client,
 
 	tc358743_initial_setup(sd);
 
-	tc358743_s_dv_timings(sd, &default_timing);
+	// tc358743_s_dv_timings(sd, &default_timing);
 
-	state->mbus_fmt_code = MEDIA_BUS_FMT_RGB888_1X24;
-	tc358743_set_csi_color_space(sd);
+	state->mbus_fmt_code = V4L2_MBUS_FMT_RGB888_1X24;
+	//tc358743_set_csi_color_space(sd);
 
 	tc358743_init_interrupts(sd);
 	tc358743_enable_interrupts(sd, tx_5v_power_present(sd));
